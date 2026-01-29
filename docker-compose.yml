@@ -1,0 +1,155 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: codecontest-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-codecontest}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-codecontest}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-codecontest}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - codecontest-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: codecontest-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - codecontest-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: codecontest-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-codecontest}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-codecontest}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-900}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - backend_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - codecontest-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  runner:
+    build:
+      context: ./runner
+      dockerfile: Dockerfile
+    container_name: codecontest-runner
+    restart: unless-stopped
+    privileged: true
+    environment:
+      RUNNER_ID: ${RUNNER_ID:-runner-1}
+      API_URL: http://backend:3000
+      CONCURRENCY: ${RUNNER_CONCURRENCY:-4}
+      MAX_EXECUTION_TIME: ${MAX_EXECUTION_TIME:-10000}
+      MAX_MEMORY: ${MAX_MEMORY:-536870912}
+      NETWORK_DISABLED: "true"
+      DOCKER_SOCKET: /var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - runner_secrets:/secrets
+    depends_on:
+      - backend
+    networks:
+      - codecontest-network
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+
+  nginx:
+    image: nginx:alpine
+    container_name: codecontest-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/ssl:/etc/nginx/ssl:ro
+      - frontend_dist:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+    networks:
+      - codecontest-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: codecontest-frontend-build
+    volumes:
+      - frontend_dist:/app/dist
+    command: ["sh", "-c", "npm run build && cp -r dist/* /app/dist/"]
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_logs:
+    driver: local
+  runner_secrets:
+    driver: local
+  frontend_dist:
+    driver: local
+
+networks:
+  codecontest-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

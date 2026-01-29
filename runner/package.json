@@ -1,0 +1,28 @@
+{
+  "name": "codecontest-runner",
+  "version": "1.0.0",
+  "description": "Secure code execution runner for coding contest platform",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "dockerode": "^4.0.2",
+    "ioredis": "^5.4.1",
+    "winston": "^3.13.0",
+    "zod": "^3.23.8",
+    "crypto": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.29",
+    "@types/node": "^20.14.2",
+    "tsx": "^4.15.5",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
