@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from './store';
+import { RootState, AppDispatch } from './store';
 import { refreshAccessToken } from './store/slices/authSlice';
 import GlobalErrorBoundary from './components/error-boundaries/GlobalErrorBoundary';
 import { useWebSocket } from './hooks/useWebSocket';
@@ -29,7 +29,7 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const App: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated, expiresAt } = useSelector((state: RootState) => state.auth);
   const { connect, disconnect } = useWebSocket();
 
@@ -37,7 +37,7 @@ const App: React.FC = () => {
     if (isAuthenticated && expiresAt) {
       const timeUntilExpiry = expiresAt - Date.now();
       if (timeUntilExpiry < 60000) {
-        dispatch(refreshAccessToken() as any);
+        dispatch(refreshAccessToken());
       }
     }
   }, [isAuthenticated, expiresAt, dispatch]);

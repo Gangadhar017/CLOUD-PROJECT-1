@@ -106,7 +106,7 @@ app.get('/ready', async (_req, res) => {
     await prisma.$queryRaw`SELECT 1`;
     await redis.ping();
     res.json({ ready: true });
-  } catch (error) {
+  } catch {
     res.status(503).json({ ready: false });
   }
 });

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { io, Socket } from 'socket.io-client';
-import { RootState } from '@/store';
+import { io } from 'socket.io-client';
+import { AppDispatch, RootState } from '@/store';
 import {
   setSocket,
   setConnected,
@@ -19,12 +19,13 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_DELAY = 3000;
 
 export const useWebSocket = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const { socket, connected, authenticated, reconnectAttempts } = useSelector(
     (state: RootState) => state.websocket
   );
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const connectRef = useRef<() => void>(() => {});
 
   const connect = useCallback(() => {
     if (socket?.connected || !accessToken) return;
@@ -49,7 +50,7 @@ export const useWebSocket = () => {
       if (reason !== 'io client disconnect' && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         reconnectTimeoutRef.current = setTimeout(() => {
           dispatch(incrementReconnectAttempts());
-          connect();
+          connectRef.current();
         }, RECONNECT_DELAY * Math.pow(2, reconnectAttempts));
       }
     });
@@ -71,11 +72,11 @@ export const useWebSocket = () => {
       dispatch(updateLeaderboardEntry(data));
     });
 
-    newSocket.on('contest_frozen', (data) => {
+    newSocket.on('contest_frozen', () => {
       dispatch(setLeaderboardFrozen(true));
     });
 
-    newSocket.on('contest_ended', (data) => {
+    newSocket.on('contest_ended', () => {
       dispatch(setLeaderboardFrozen(false));
     });
 
@@ -84,8 +85,12 @@ export const useWebSocket = () => {
       newSocket.emit('pong');
     });
 
-    dispatch(setSocket(newSocket as any));
+    dispatch(setSocket(newSocket));
   }, [accessToken, dispatch, reconnectAttempts, socket]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

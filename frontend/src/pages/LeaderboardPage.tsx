@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { AppDispatch, RootState } from '@/store';
 import { fetchLeaderboard } from '@/store/slices/contestSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { ChevronLeft, Trophy, Lock, AlertTriangle } from 'lucide-react';
 const LeaderboardPage: React.FC = () => {
   const { contestId } = useParams<{ contestId: string }>();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   
   const { currentContest, leaderboard, leaderboardFrozen } = useSelector(
     (state: RootState) => state.contest
@@ -19,7 +19,7 @@ const LeaderboardPage: React.FC = () => {
 
   useEffect(() => {
     if (contestId) {
-      dispatch(fetchLeaderboard(contestId) as any);
+      dispatch(fetchLeaderboard(contestId));
     }
   }, [contestId, dispatch]);
 
@@ -100,7 +100,7 @@ const LeaderboardPage: React.FC = () => {
                         <td className="py-3 px-4 text-center font-mono">{entry.solved}</td>
                         <td className="py-3 px-4 text-center font-mono">{entry.penalty}</td>
                         {currentContest?.problems.map((problem) => {
-                          const stats = (entry.problemStats as any)?.[problem.id];
+                          const stats = entry.problemStats?.[problem.id];
                           return (
                             <td key={problem.id} className="py-3 px-2 text-center">
                               {stats?.solved ? (

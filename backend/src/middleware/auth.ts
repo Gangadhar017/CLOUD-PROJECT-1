@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../utils/prisma.js';
 import { logger } from '../utils/logger.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = (process.env.JWT_SECRET || 'your-secret-key-change-in-production') as jwt.Secret;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '15m';
 
 export interface AuthRequest extends Request {
@@ -15,14 +15,30 @@ export interface AuthRequest extends Request {
   };
 }
 
+type AccessTokenPayload = jwt.JwtPayload & {
+  id: string;
+  type?: string;
+  username?: string;
+  email?: string;
+  role?: string;
+};
+
 export const generateTokens = (payload: { id: string; username: string; email: string; role: string }) => {
-  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN } as any);
-  const refreshToken = jwt.sign({ id: payload.id, type: 'refresh' }, JWT_SECRET, { expiresIn: '7d' } as any);
+  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions);
+  const refreshToken = jwt.sign(
+    { id: payload.id, type: 'refresh' },
+    JWT_SECRET,
+    { expiresIn: '7d' } as jwt.SignOptions
+  );
   return { accessToken, refreshToken };
 };
 
-export const verifyToken = (token: string): any => {
-  return jwt.verify(token, JWT_SECRET);
+export const verifyToken = (token: string): AccessTokenPayload => {
+  const decoded = jwt.verify(token, JWT_SECRET);
+  if (typeof decoded === 'string') {
+    throw new Error('Invalid token payload');
+  }
+  return decoded as AccessTokenPayload;
 };
 
 export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {

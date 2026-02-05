@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../utils/prisma.js';
+import { Prisma, UserRole } from '@prisma/client';
 import { redis } from '../utils/redis.js';
 import { auditLog } from '../utils/logger.js';
 import { AuthRequest, requireRole } from '../middleware/auth.js';
@@ -21,7 +22,7 @@ router.get('/users', async (req: AuthRequest, res, next) => {
   try {
     const { search, role, limit = '50', offset = '0' } = req.query;
 
-    const where: any = {};
+    const where: Prisma.UserWhereInput = {};
     
     if (search) {
       where.OR = [
@@ -30,7 +31,9 @@ router.get('/users', async (req: AuthRequest, res, next) => {
       ];
     }
     
-    if (role) where.role = role;
+    if (typeof role === 'string' && Object.values(UserRole).includes(role as UserRole)) {
+      where.role = role as UserRole;
+    }
 
     const users = await prisma.user.findMany({
       where,
@@ -155,7 +158,7 @@ router.get('/audit-logs', async (req: AuthRequest, res, next) => {
   try {
     const { userId, action, limit = '100', offset = '0' } = req.query;
 
-    const where: any = {};
+    const where: Prisma.AuditLogWhereInput = {};
     
     if (userId) where.userId = userId as string;
     if (action) where.action = action as string;

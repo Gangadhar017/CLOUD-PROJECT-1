@@ -1,23 +1,22 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { RootState } from '@/store';
+import { AppDispatch, RootState } from '@/store';
 import { fetchContests } from '@/store/slices/contestSlice';
 import { logout } from '@/store/slices/authSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Clock, Trophy, LogOut, Plus, Calendar } from 'lucide-react';
 
 const ContestListPage: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { contests, loading } = useSelector((state: RootState) => state.contest);
   const { user } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
-    dispatch(fetchContests() as any);
+    dispatch(fetchContests());
   }, [dispatch]);
 
   const handleLogout = () => {

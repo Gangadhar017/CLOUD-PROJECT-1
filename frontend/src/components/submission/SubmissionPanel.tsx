@@ -1,22 +1,21 @@
 import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { AppDispatch, RootState } from '@/store';
 import {
   submitSolution,
   pollSubmissionStatus,
-  updateSubmissionStatus,
-  SubmissionState,
 } from '@/store/slices/submissionSlice';
 import { setSubmitCooldown } from '@/store/slices/submissionSlice';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 import SubmissionErrorBoundary from '../error-boundaries/SubmissionErrorBoundary';
+import { SupportedLanguage } from '@/store/slices/editorSlice';
 
 interface SubmissionPanelProps {
   contestId: string;
   problemId: string;
   code: string;
-  language: string;
+  language: SupportedLanguage;
 }
 
 const verdictIcons: Record<string, React.ReactNode> = {
@@ -53,14 +52,13 @@ const SubmissionPanel: React.FC<SubmissionPanelProps> = ({
   code,
   language,
 }) => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
   
   const {
     submissions,
     currentSubmission,
     loading,
-    error,
     submitCooldown,
     pendingVerifications,
   } = useSelector((state: RootState) => state.submission);
@@ -81,7 +79,7 @@ const SubmissionPanel: React.FC<SubmissionPanelProps> = ({
   useEffect(() => {
     const pollInterval = setInterval(() => {
       pendingVerifications.forEach((submissionId) => {
-        dispatch(pollSubmissionStatus(submissionId) as any);
+        dispatch(pollSubmissionStatus(submissionId));
       });
     }, 2000);
 
@@ -118,10 +116,10 @@ const SubmissionPanel: React.FC<SubmissionPanelProps> = ({
         submitSolution({
           contestId,
           problemId,
-          language: language as any,
+          language,
           code,
           idempotencyKey,
-        }) as any
+        })
       );
 
       if (submitSolution.fulfilled.match(result)) {
@@ -137,6 +135,7 @@ const SubmissionPanel: React.FC<SubmissionPanelProps> = ({
         });
       }
     } catch (error) {
+      console.error('Submission error:', error);
       toast({
         title: 'Submission Error',
         description: 'An unexpected error occurred. Please try again.',

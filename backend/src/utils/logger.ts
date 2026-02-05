@@ -49,8 +49,8 @@ export const auditLog = ({
   action: string;
   entityType: string;
   entityId?: string;
-  oldValue?: any;
-  newValue?: any;
+  oldValue?: unknown;
+  newValue?: unknown;
   ipAddress?: string;
   userAgent?: string;
 }) => {

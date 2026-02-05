@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Socket } from 'socket.io-client';
+import type { WritableDraft } from 'immer';
 
 interface WebSocketState {
   socket: Socket | null;
@@ -24,7 +25,7 @@ const websocketSlice = createSlice({
   initialState,
   reducers: {
     setSocket: (state, action: PayloadAction<Socket | null>) => {
-      state.socket = action.payload as any;
+      state.socket = action.payload as unknown as WritableDraft<Socket> | null;
     },
     setConnected: (state, action: PayloadAction<boolean>) => {
       state.connected = action.payload;

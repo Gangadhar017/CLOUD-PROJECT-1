@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { RootState } from '@/store';
+import { AppDispatch, RootState } from '@/store';
 import { login, clearError } from '@/store/slices/authSlice';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Code2 } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { isAuthenticated, loading, error } = useSelector((state: RootState) => state.auth);
   
@@ -31,7 +31,7 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     if (!username.trim() || !password.trim()) return;
     
-    dispatch(login({ username, password }) as any);
+    dispatch(login({ username, password }));
   };
 
   return (

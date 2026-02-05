@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Editor from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
-import { RootState } from '@/store';
+import { AppDispatch, RootState } from '@/store';
 import {
   setCode,
   setLanguage,
@@ -35,7 +35,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   problemId,
   height = '600px',
 }) => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof import('monaco-editor') | null>(null);
@@ -74,9 +74,9 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         try {
           await saveEditorState(contestId, problemId, language, code);
           dispatch(markSaved());
-        } catch (error) {
-          console.error('Autosave failed:', error);
-        }
+    } catch (error) {
+      console.error('Autosave failed:', error);
+    }
       }, 30000);
     }
 
@@ -123,6 +123,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         description: 'Your code has been saved locally.',
       });
     } catch (error) {
+      console.error('Manual save failed:', error);
       toast({
         title: 'Save Failed',
         description: 'Failed to save code. Please try again.',
@@ -172,7 +173,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
     occurrencesHighlight: 'singleFile',
     codeLens: true,
     colorDecorators: true,
-    lightbulb: { enabled: 'on' as any },
+    lightbulb: { enabled: editor.ShowLightbulbIconMode.On },
   };
 
   if (isLoading) {

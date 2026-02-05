@@ -14,6 +14,11 @@ interface AuthenticatedSocket extends Socket {
   };
 }
 
+type AccessTokenPayload = jwt.JwtPayload & {
+  id: string;
+  type?: string;
+};
+
 export const setupWebSocket = (io: Server) => {
   io.use(async (socket: AuthenticatedSocket, next) => {
     try {
@@ -23,14 +28,18 @@ export const setupWebSocket = (io: Server) => {
         return next(new Error('Authentication required'));
       }
 
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const decoded = jwt.verify(token, JWT_SECRET);
+      if (typeof decoded === 'string') {
+        return next(new Error('Invalid token payload'));
+      }
+      const payload = decoded as AccessTokenPayload;
       
-      if (decoded.type === 'refresh') {
+      if (payload.type === 'refresh') {
         return next(new Error('Invalid token type'));
       }
 
       const user = await prisma.user.findUnique({
-        where: { id: decoded.id },
+        where: { id: payload.id },
         select: { id: true, username: true, email: true, role: true, isActive: true },
       });
 
@@ -55,7 +64,7 @@ export const setupWebSocket = (io: Server) => {
   io.on('connection', (socket: AuthenticatedSocket) => {
     logger.info(`WebSocket connected: ${socket.id}, user: ${socket.user?.username}`);
 
-    socket.on('authenticate', (_data) => {
+    socket.on('authenticate', () => {
       socket.emit('authenticated');
     });
 
@@ -126,11 +135,11 @@ export const setupWebSocket = (io: Server) => {
   }, 30000);
 };
 
-export const emitToContest = (io: Server, contestId: string, event: string, data: any) => {
+export const emitToContest = (io: Server, contestId: string, event: string, data: unknown) => {
   io.to(`contest:${contestId}`).emit(event, data);
 };
 
-export const emitToUser = (io: Server, userId: string, event: string, data: any) => {
+export const emitToUser = (io: Server, userId: string, event: string, data: unknown) => {
   io.sockets.sockets.forEach((socket: AuthenticatedSocket) => {
     if (socket.user?.id === userId) {
       socket.emit(event, data);

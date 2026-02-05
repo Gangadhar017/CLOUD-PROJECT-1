@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { AppDispatch, RootState } from '@/store';
 import { fetchContest, setCurrentProblem, updateTimeRemaining } from '@/store/slices/contestSlice';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import CodeEditor from '@/components/editor/CodeEditor';
@@ -9,12 +9,12 @@ import SubmissionPanel from '@/components/submission/SubmissionPanel';
 import ProblemErrorBoundary from '@/components/error-boundaries/ProblemErrorBoundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Clock, Trophy, ChevronLeft, Users } from 'lucide-react';
+import { Clock, Trophy, ChevronLeft } from 'lucide-react';
 
 const ContestPage: React.FC = () => {
   const { contestId } = useParams<{ contestId: string }>();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { subscribeToContest, unsubscribeFromContest } = useWebSocket();
   
   const { currentContest, currentProblem, timeRemaining, loading, error } = useSelector(
@@ -24,7 +24,7 @@ const ContestPage: React.FC = () => {
 
   useEffect(() => {
     if (contestId) {
-      dispatch(fetchContest(contestId) as any);
+      dispatch(fetchContest(contestId));
       subscribeToContest(contestId);
     }
     return () => {

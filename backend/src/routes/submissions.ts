@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import crypto from 'crypto';
+import { Prisma, Verdict } from '@prisma/client';
 import { prisma } from '../utils/prisma.js';
 import { logger, auditLog } from '../utils/logger.js';
 import { AuthRequest } from '../middleware/auth.js';
@@ -203,10 +204,10 @@ router.get('/', async (req: AuthRequest, res, next) => {
     const userId = req.user!.id;
     const { contestId, problemId, limit = '20', offset = '0' } = req.query;
 
-    const where: any = { userId };
+    const where: Prisma.SubmissionWhereInput = { userId };
 
-    if (contestId) where.contestId = contestId;
-    if (problemId) where.problemId = problemId;
+    if (typeof contestId === 'string') where.contestId = contestId;
+    if (typeof problemId === 'string') where.problemId = problemId;
 
     const submissions = await prisma.submission.findMany({
       where,
@@ -250,10 +251,11 @@ export const updateSubmissionVerdict = async (
 
     const oldVerdict = submission.verdict;
 
+    const verdictValue = verdict as Verdict;
     const updated = await prisma.submission.update({
       where: { id: submissionId },
       data: {
-        verdict: verdict as any,
+        verdict: verdictValue,
         score: data.score ?? submission.score,
         executionTime: data.executionTime,
         memoryUsed: data.memoryUsed,
@@ -269,7 +271,7 @@ export const updateSubmissionVerdict = async (
       data: {
         submissionId,
         oldVerdict,
-        newVerdict: verdict as any,
+        newVerdict: verdictValue,
         reason: 'Runner evaluation completed',
       },
     });

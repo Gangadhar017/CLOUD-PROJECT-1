@@ -33,6 +33,8 @@ const LeaderboardEntrySchema = z.object({
   })),
 });
 
+export type LeaderboardEntry = z.infer<typeof LeaderboardEntrySchema>;
+
 interface ContestState {
   contests: z.infer<typeof ContestSchema>[];
   currentContest: z.infer<typeof ContestSchema> | null;
