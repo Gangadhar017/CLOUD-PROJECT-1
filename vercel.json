@@ -3,11 +3,11 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://your-backend.example.com/api/$1"
+      "destination": "https://cloud-project-1-1.onrender.com/api/$1"
     },
     {
       "source": "/ws",
-      "destination": "https://your-backend.example.com/ws"
+      "destination": "https://cloud-project-1-1.onrender.com/ws"
     },
     {
       "source": "/(.*)",
