@@ -30,10 +30,18 @@ export const useWebSocket = () => {
   const connect = useCallback(() => {
     if (socket?.connected || !accessToken) return;
 
-    const newSocket = io('/ws', {
+    const rawWsBaseUrl = import.meta.env.VITE_WS_BASE_URL as string | undefined;
+    const wsBaseUrl = rawWsBaseUrl?.endsWith('/') ? rawWsBaseUrl.slice(0, -1) : rawWsBaseUrl;
+    const socketUrl = wsBaseUrl ?? '/ws';
+    const socketOptions = wsBaseUrl
+      ? { path: '/ws' }
+      : undefined;
+
+    const newSocket = io(socketUrl, {
       transports: ['websocket'],
       auth: { token: accessToken },
       reconnection: false,
+      ...(socketOptions ?? {}),
     });
 
     newSocket.on('connect', () => {

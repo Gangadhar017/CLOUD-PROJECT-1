@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { z } from 'zod';
 import { SupportedLanguage } from './editorSlice';
+import { apiUrl } from '@/lib/api';
 
 export const VerdictSchema = z.enum([
   'pending',
@@ -78,7 +79,7 @@ export const submitSolution = createAsyncThunk(
     }
 
     try {
-      const response = await fetch('/api/submissions', {
+      const response = await fetch(apiUrl('/api/submissions'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +108,7 @@ export const fetchSubmission = createAsyncThunk(
   'submission/fetch',
   async (submissionId: string, { rejectWithValue }) => {
     try {
-      const response = await fetch(`/api/submissions/${submissionId}`);
+      const response = await fetch(apiUrl(`/api/submissions/${submissionId}`));
       if (!response.ok) throw new Error('Failed to fetch submission');
       const data = await response.json();
       return SubmissionSchema.parse(data);
@@ -121,7 +122,7 @@ export const pollSubmissionStatus = createAsyncThunk(
   'submission/poll',
   async (submissionId: string, { rejectWithValue }) => {
     try {
-      const response = await fetch(`/api/submissions/${submissionId}/status`);
+      const response = await fetch(apiUrl(`/api/submissions/${submissionId}/status`));
       if (!response.ok) throw new Error('Failed to poll submission');
       const data = await response.json();
       return SubmissionSchema.parse(data);

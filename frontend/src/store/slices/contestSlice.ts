@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { z } from 'zod';
+import { apiUrl } from '@/lib/api';
 
 const ContestSchema = z.object({
   id: z.string(),
@@ -63,7 +64,7 @@ export const fetchContests = createAsyncThunk(
   'contest/fetchContests',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/contests');
+      const response = await fetch(apiUrl('/api/contests'));
       if (!response.ok) throw new Error('Failed to fetch contests');
       const data = await response.json();
       return z.array(ContestSchema).parse(data);
@@ -77,7 +78,7 @@ export const fetchContest = createAsyncThunk(
   'contest/fetchContest',
   async (contestId: string, { rejectWithValue }) => {
     try {
-      const response = await fetch(`/api/contests/${contestId}`);
+      const response = await fetch(apiUrl(`/api/contests/${contestId}`));
       if (!response.ok) throw new Error('Failed to fetch contest');
       const data = await response.json();
       return ContestSchema.parse(data);
@@ -91,7 +92,7 @@ export const fetchLeaderboard = createAsyncThunk(
   'contest/fetchLeaderboard',
   async (contestId: string, { rejectWithValue }) => {
     try {
-      const response = await fetch(`/api/contests/${contestId}/leaderboard`);
+      const response = await fetch(apiUrl(`/api/contests/${contestId}/leaderboard`));
       if (response.status === 403) {
         return { frozen: true, entries: [] };
       }

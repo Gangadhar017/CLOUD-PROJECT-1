@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { z } from 'zod';
+import { apiUrl } from '@/lib/api';
 
 const TokenResponseSchema = z.object({
   accessToken: z.string(),
@@ -37,7 +38,7 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials: { username: string; password: string }, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(apiUrl('/api/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
@@ -63,7 +64,7 @@ export const refreshAccessToken = createAsyncThunk(
     if (!refreshToken) throw new Error('No refresh token');
     
     try {
-      const response = await fetch('/api/auth/refresh', {
+      const response = await fetch(apiUrl('/api/auth/refresh'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
