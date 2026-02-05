@@ -7,6 +7,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "start:prod": "npm run db:generate && npx prisma db push && node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
