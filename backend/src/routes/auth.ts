@@ -17,6 +17,12 @@ const RefreshTokenSchema = z.object({
   refreshToken: z.string(),
 });
 
+const BootstrapAdminSchema = z.object({
+  username: z.string().min(3).max(50),
+  email: z.string().email(),
+  password: z.string().min(8),
+});
+
 router.post('/login', async (req, res, next) => {
   try {
     const { username, password } = LoginSchema.parse(req.body);
@@ -152,6 +158,61 @@ router.post('/refresh', async (req, res, next) => {
       accessToken,
       refreshToken: newRefreshToken,
       expiresIn: 900,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// One-time admin bootstrap. Guarded by ADMIN_SETUP_TOKEN and only allowed if no admin exists.
+router.post('/bootstrap-admin', async (req, res, next) => {
+  try {
+    const setupToken = process.env.ADMIN_SETUP_TOKEN;
+    if (!setupToken) {
+      throw new AppError(404, 'Not found');
+    }
+
+    const providedToken = req.header('x-admin-setup-token');
+    if (!providedToken || providedToken !== setupToken) {
+      throw new AppError(403, 'Forbidden');
+    }
+
+    const existingAdmin = await prisma.user.count({
+      where: { role: 'ADMIN' },
+    });
+
+    if (existingAdmin > 0) {
+      throw new AppError(409, 'Admin already exists');
+    }
+
+    const data = BootstrapAdminSchema.parse(req.body);
+    const passwordHash = await bcrypt.hash(data.password, 12);
+
+    const user = await prisma.user.create({
+      data: {
+        username: data.username,
+        email: data.email,
+        passwordHash,
+        role: 'ADMIN',
+        isActive: true,
+      },
+    });
+
+    auditLog({
+      userId: user.id,
+      action: 'BOOTSTRAP_ADMIN',
+      entityType: 'user',
+      entityId: user.id,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.status(201).json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
     });
   } catch (error) {
     next(error);
