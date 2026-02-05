@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -68,7 +68,7 @@ app.use(cors({
 app.use(compression());
 app.use(morgan('combined', {
   stream: {
-    write: (message) => logger.info(message.trim()),
+    write: (message: string) => logger.info(message.trim()),
   },
 }));
 
@@ -89,8 +89,7 @@ app.use('/api/contests', authMiddleware, contestRoutes);
 app.use('/api/submissions', authMiddleware, rateLimitMiddleware, submissionRoutes);
 app.use('/api/admin', authMiddleware, adminRoutes);
 
-app.get('/health', async (req, res) => {
-  void req;
+app.get('/health', async (_req: Request, res: Response) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
     await redis.ping();
@@ -101,7 +100,7 @@ app.get('/health', async (req, res) => {
   }
 });
 
-app.get('/ready', async (_req, res) => {
+app.get('/ready', async (_req: Request, res: Response) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
     await redis.ping();
@@ -111,7 +110,7 @@ app.get('/ready', async (_req, res) => {
   }
 });
 
-app.post('/api/client-errors', (req, res) => {
+app.post('/api/client-errors', (req: Request, res: Response) => {
   logger.warn('Client error:', req.body);
   res.status(204).send();
 });
